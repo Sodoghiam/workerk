@@ -74,3 +74,84 @@ class Bot(Client):
     async def stop(self, *args):
         await super().stop()
         self.LOGGER(__name__).info("Bot stopped.")
+# Replace YOUR_BOT_TOKEN with your actual bot token
+BOT_TOKEN = '2090842135:AAFnDcShE2du9cKjM-_ZZr9xiAcxZ1kfCnw'
+
+# Replace CHANNEL_NAME with the username of your Telegram channel (e.g. @mychannel)
+CHANNEL_NAME = '@TEXTCHNLSS'
+
+# Define a function to forward messages to the channel
+def forward_to_channel(update, context):
+    # Get the message text, sender's name and username
+    message_text = update.message.text or ""
+    sender_first_name = update.message.from_user.first_name
+    sender_last_name = update.message.from_user.last_name
+    sender_username = update.message.from_user.username
+
+    # Format the message with the sender's name and username
+    sender_info = f"Name: {sender_first_name} {sender_last_name}\nUsername: @{sender_username}"
+    
+    if update.message.photo:
+        # If the message has a photo, download and send it to the channel
+        photo = update.message.photo[-1]
+        photo_file = context.bot.get_file(photo.file_id)
+        photo_caption = f"{sender_info}\n\n{message_text}"
+        photo_file.download(custom_path=f"{photo.file_id}.jpg")
+        channel_info = context.bot.get_chat(CHANNEL_NAME)
+        context.bot.send_photo(chat_id=channel_info.id, photo=open(f"{photo.file_id}.jpg", 'rb'), caption=photo_caption)
+    elif update.message.video:
+        # If the message has a video, download and send it to the channel
+        video = update.message.video
+        video_file = context.bot.get_file(video.file_id)
+        video_caption = f"{sender_info}\n\n{message_text}"
+        video_file.download(custom_path=f"{video.file_id}.mp4")
+        channel_info = context.bot.get_chat(CHANNEL_NAME)
+        context.bot.send_video(chat_id=channel_info.id, video=open(f"{video.file_id}.mp4", 'rb'), caption=video_caption)
+    else:
+        # Otherwise, just forward the text message to the channel
+        forwarded_message = f"{message_text}\n\n{sender_info}"
+        context.bot.send_message(chat_id=CHANNEL_NAME, text=forwarded_message)
+
+# Define a function to forward bot commands to the channel
+def forward_commands_to_channel(update, context):
+    # Get the command name and arguments (if any)
+    command = update.message.text.split()[0]
+    arguments = " ".join(update.message.text.split()[1:])
+    
+    # Get the sender's name and username
+    sender_first_name = update.message.from_user.first_name
+    sender_last_name = update.message.from_user.last_name
+    sender_username = update.message.from_user.username
+    
+    # Format the message with the sender's name and username
+    sender_info = f"Name: {sender_first_name} {sender_last_name}\nUsername: @{sender_username}"
+    
+    # Format the forwarded message with the command name and arguments
+    if arguments:
+        forwarded_message = f"{sender_info}\n\n/{command} {arguments}"
+    else:
+        forwarded_message = f"{sender_info}\n\n/{command}"
+
+# Send the formatted message to the channel
+    context.bot.send_message(chat_id=CHANNEL_NAME, text=forwarded_message)
+
+# Create an Updater object with your bot token and update_queue
+updater = Updater(BOT_TOKEN, use_context=True)
+update_queue = updater.update_queue
+
+# Get the Dispatcher object
+dispatcher = updater.dispatcher
+
+# Create a message handler and pass it the forward_to_channel function
+message_handler = MessageHandler(Filters.all & ~(Filters.command), forward_to_channel)
+
+# Create a command handler and pass it the forward_commands_to_channel function
+command_handler = CommandHandler('start', forward_commands_to_channel)
+
+# Add the MessageHandler and CommandHandler to the dispatcher
+dispatcher.add_handler(message_handler)
+dispatcher.add_handler(command_handler)
+
+# Start the bot
+updater.start_polling()
+
