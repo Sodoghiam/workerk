@@ -76,8 +76,6 @@ class Bot(Client):
         self.LOGGER(__name__).info("Bot stopped.")
 
 #--------------
-# Replace YOUR_BOT_TOKEN with your actual bot token
-BOT_TOKEN = '2090842135:AAFnDcShE2du9cKjM-_ZZr9xiAcxZ1kfCnw'
 
 # Replace CHANNEL_NAME with the username of your Telegram channel (e.g. @mychannel)
 CHANNEL_NAME = '@TEXTCHNLSS'
